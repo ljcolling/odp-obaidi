@@ -1,0 +1,116 @@
+---
+title: "Obaidi et al 2019"
+author: Lincoln J Colling
+date: "`r Sys.Date()`"
+output: 
+  bookdown::pdf_document2:
+    latex_engine: xelatex
+    keep_tex: FALSE
+    citation_package: biblatex
+documentclass: "article"
+biblio-style: "apa"
+classoption: ["a4paper","12pt"]
+bibliography: ['references.bib','obaidi.bib']
+
+header-includes:
+  - \usepackage{pdflscape}
+  - \usepackage{makecell}
+  - \usepackage{booktabs}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+xfun::pkg_attach2("tidyverse",
+"knitr",
+"kableExtra",
+"rmarkdown",
+"bookdown",
+"bib2df",
+"magrittr")
+
+remotes::install_github("ljcolling/ODPHelper")
+options(kableExtra.latex.load_packages = TRUE)
+obaidi <- readRDS("../made/obaidi.Rdata")
+obaidi_download <- readRDS("../made/obaidi_download_info.Rdata")
+readr::write_lines(unlist(obaidi$session_info$citations), path = "obaidi.bib")
+library(ODPHelper)
+as_tibble <- as_data_frame
+keys = keys_from_session(obaidi$session_info$citations)
+keys <- keys[!(keys %in% "R-ODPHelper")]
+```
+\newpage
+
+# Introduction
+
+This documents contains the reanalysis of the following paper:
+
+Obaidi, M., Bergh, R., Akrami, N., & Anjum, G. (2019). Group-Based Relative Deprivation Explains Endorsement of Extremism Among Western-Born Muslims. *Psychological Science, 30*(4), 596–605.
+
+@Obaidi performed their analysis on a mix of SPSS and proprietary meta-analysis software. However, all re-analyses were performed in R.
+
+The analysis code is available at [https://github.com/ljcolling/odp-obaidi](https://github.com/ljcolling/odp-obaidi). This document is automatically built. To manually build this document, clone the git repository and run `make all`.
+
+## Data download
+
+A total of `r sum(grepl(obaidi_download$files,pattern = ".sav"))` files were downloaded from [`r glue::glue("https://osf.io/{obaidi_download$node}")`](`r glue::glue("https://osf.io/{obaidi_download$node}")`). The downloaded files the MD5 hashes are shown in Table \@ref(tab:obaiditablefiles).
+
+```{r obaiditablefiles, echo=FALSE}
+downloaded_files <- obaidi_download$hashes[grepl(names(obaidi_download$hashes), pattern = ".sav")]
+tibble::tibble(`File name` = stringr::str_remove_all(names(downloaded_files),"./data/"), `MD5 Hash` = downloaded_files) %>%  knitr::kable(digits = 3, booktabs = T, caption = "Files downloaded for Obaidi et al. (2019)", escape = T, format = "latex",   linesep = "") %>%
+  kableExtra::kable_styling(latex_options = "scale_down") 
+```
+
+# Results
+
+The primary analyses were all reported in Tables 1--3. Therefore, our re-analysis attempted to reproduce these tables. Our reproduction of Table 1 from @Obaidi in shown in \@ref(tab:obaiditable1). Apart from a few minor rounding errors we were able to reproduce the results.
+
+Our reproduction of Table 2 from @Obaidi in shown in \@ref(tab:obaiditable2). Apart from a few minor rounding errors we were able to reproduce the results. There are very minor differences in the results; however these are likely due to random variation in the bootstrapping procedure. 
+
+Finally, our reproduction of Table 3 from @Obaidi in shown in \@ref(tab:obaiditable3). Our results again matched the reported results except for very small differences. These differences likely result from difference in the bootstrapping procedure that lead to the differences in \@ref(tab:obaiditable2). Additionally, @Obaidi did not report their method for fitting the random effects model and as a result we employed the DerSimonian-Laird estimator as this appeared to match the reported results most closely.
+
+```{r obaiditable1, echo=FALSE}
+obaidi$table_1 %>% kable(booktabs = T, caption = "Reproduction of Table 1 (Obaidi et al., 2019)", linesep = "") %>%
+    kableExtra::kable_styling(latex_options = "scale_down") %>%
+  group_rows(start_row = 1, end_row = 5, latex_align = "c", group_label = "Birthplace") %>%
+  group_rows(start_row = 6, end_row = 9, latex_align = "c", group_label = "Group-based relative deprivation")
+```
+
+
+```{r obaiditable2, echo=FALSE}
+obaidi$table_2[[2]] %<>% stringr::str_replace_all(pattern = "L", "{[") %>% stringr::str_replace_all(pattern = "R", "]}")
+
+obaidi$table_2[[3]] %<>% stringr::str_replace_all(pattern = "L", "{[") %>% stringr::str_replace_all(pattern = "R", "]}")
+
+obaidi$table_2[[4]] %<>% stringr::str_replace_all(pattern = "L", "{[") %>% stringr::str_replace_all(pattern = "R", "]}")
+
+obaidi$table_2[[5]] %<>% stringr::str_replace_all(pattern = "L", "{[") %>% stringr::str_replace_all(pattern = "R", "]}")
+obaidi$table_2 %>%
+  mutate_all(linebreak) %>% magrittr::set_colnames(linebreak(names(obaidi$table_2))) %>%
+  kable(booktabs = T, caption = "Reproduction of Table 2 (Obaidi et al., 2019)", format = "latex",
+        escape = F, align = c("lc"),linesep = "") %>%
+    kableExtra::kable_styling(latex_options = "scale_down") 
+```
+
+
+```{r obaiditable3, echo=FALSE}
+obaidi$table_3[[4]] %<>% stringr::str_replace_all(pattern = "L", "{[") %>% stringr::str_replace_all(pattern = "R", "]}")
+obaidi$table_3[[6]] %<>% str_replace_all("< .01", "\\\\textless .01")
+obaidi$table_3 %<>% rename(`95\\% CI` = `95% CI`)
+obaidi$table_3 %<>% mutate(`Dependent variable` = recode(`Dependent variable` ,!!!c("Violent\nbehavioral\n intentions" = "Violent behavioral\nintentions")))
+obaidi$table_3 %>%
+  mutate_all(linebreak) %>% magrittr::set_colnames(linebreak(names(obaidi$table_3))) %>%
+  kable(booktabs = T, caption = "Reproduction of Table 3 (Obaidi et al., 2019)", format = "latex",
+        escape = F,linesep = "", digits = 2, 
+        align = c("lc")) %>%
+    kableExtra::kable_styling(latex_options = "scale_down") 
+
+```
+
+# `R` information {-}
+
+We performed our analysis on `r obaidi$session_info$sessionInfo$R.version$version.string` with all packages installed from a timestamped version of MRAN (date: `r str_remove(obaidi$session_info$cran,"https://mran.microsoft.com/snapshot/")`). The following R packages were used: `r paste0(map_chr(keys, function(x) glue::glue("@{x}")), collapse = ", ")`.
+
+
+
+
+# References
