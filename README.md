@@ -5,4 +5,4 @@
 
 Open data project repo for Obaidi et al (2019)
 
-The built document can be view [here](https://git.colling.net.nz/odp-obaidi/)
+The built document can be view [here](http://git.colling.net.nz/odp-obaidi/)
